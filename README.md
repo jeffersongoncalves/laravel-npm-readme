@@ -1,6 +1,14 @@
+<div class="filament-hidden">
+
+![Laravel npm Readme](https://raw.githubusercontent.com/jeffersongoncalves/laravel-npm-readme/master/art/jeffersongoncalves-laravel-npm-readme.png)
+
+</div>
+
 # Laravel npm Readme
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jeffersongoncalves/laravel-npm-readme.svg?style=flat-square)](https://packagist.org/packages/jeffersongoncalves/laravel-npm-readme)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/jeffersongoncalves/laravel-npm-readme/run-tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/jeffersongoncalves/laravel-npm-readme/actions?query=workflow%3Arun-tests+branch%3Amaster)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/jeffersongoncalves/laravel-npm-readme/fix-php-code-style-issues.yml?branch=master&label=code%20style&style=flat-square)](https://github.com/jeffersongoncalves/laravel-npm-readme/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amaster)
 [![Total Downloads](https://img.shields.io/packagist/dt/jeffersongoncalves/laravel-npm-readme.svg?style=flat-square)](https://packagist.org/packages/jeffersongoncalves/laravel-npm-readme)
 
 Fetch an npm package's README straight from the registry document, render the markdown and cache the resulting HTML. The npm registry ships the README markdown inline in the package document, so there is no extra request beyond the registry call.
