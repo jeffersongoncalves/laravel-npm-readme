@@ -44,11 +44,30 @@ class NpmReadme
             return null;
         }
 
-        return Cache::remember(
-            'npm_readme:'.$package,
-            now()->addMinutes(self::cacheMinutes()),
-            fn () => self::renderPackageReadme($package)
-        );
+        $cacheKey = 'npm_readme:'.$package;
+        $cached = Cache::get($cacheKey);
+
+        if ($cached !== null) {
+            // '' is the negative-cache sentinel for "resolved, but no README".
+            // Cache::remember() can't do this: it treats a null payload as a
+            // miss and re-fetches every call, so a package without a README
+            // would hammer the registry on each request.
+            return $cached === '' ? null : $cached;
+        }
+
+        $result = self::renderPackageReadme($package);
+
+        // `false` flags a transient failure (network error / 5xx) — leave it
+        // uncached so the next call retries. A string (HTML) or `null` ("no
+        // README"/4xx) is a stable outcome: cache it, storing null as '' so the
+        // negative result is honoured without another registry round-trip.
+        if ($result === false) {
+            return null;
+        }
+
+        Cache::put($cacheKey, $result ?? '', now()->addMinutes(self::cacheMinutes()));
+
+        return $result;
     }
 
     /**
@@ -61,14 +80,26 @@ class NpmReadme
             return null;
         }
 
-        if (! preg_match('~npmjs\.com/package/(@[^/?#]+/[^/?#]+|[^/?#]+)~i', trim($url), $m)) {
+        $url = trim($url);
+
+        // Resolve the real host and whitelist it, so look-alikes like
+        // `evilnpmjs.com` or `npmjs.com.evil.com` can't slip through a loose
+        // substring match. parse_url() only fills the host when a scheme is
+        // present, so assume https:// for scheme-less input.
+        $host = parse_url($url, PHP_URL_HOST) ?? parse_url('https://'.$url, PHP_URL_HOST);
+
+        if (! is_string($host) || ! in_array(strtolower($host), ['npmjs.com', 'www.npmjs.com'], true)) {
+            return null;
+        }
+
+        if (! preg_match('~/package/(@[^/?#]+/[^/?#]+|[^/?#]+)~', $url, $m)) {
             return null;
         }
 
         return rtrim($m[1], '/');
     }
 
-    private static function renderPackageReadme(string $package): ?string
+    private static function renderPackageReadme(string $package): string|false|null
     {
         try {
             $response = Http::timeout(self::timeout())
@@ -76,18 +107,20 @@ class NpmReadme
                     'User-Agent' => self::userAgent(),
                     'Accept' => 'application/json',
                 ])
-                ->get(self::registryUrl().'/'.rawurlencode($package));
+                ->get(self::registryUrl().'/'.self::encodePackage($package));
         } catch (Throwable $e) {
             Log::warning('NpmReadme registry fetch failed', [
                 'package' => $package,
                 'error' => $e->getMessage(),
             ]);
 
-            return null;
+            return false;
         }
 
         if (! $response->successful()) {
-            return null;
+            // 4xx (not found / bad name) is a stable result worth negative-
+            // caching; a 5xx is a transient registry hiccup, so retry later.
+            return $response->clientError() ? null : false;
         }
 
         $readme = $response->json('readme');
@@ -103,6 +136,16 @@ class NpmReadme
         }
 
         return self::render($readme);
+    }
+
+    /**
+     * Encode a package id for the registry path. Only the scope separator is
+     * escaped: rawurlencode() would also turn the leading `@` into `%40` and
+     * yield a 404, so scoped packages must be requested as `@scope%2Fname`.
+     */
+    private static function encodePackage(string $package): string
+    {
+        return str_replace('/', '%2F', $package);
     }
 
     private static function render(string $markdown): string
