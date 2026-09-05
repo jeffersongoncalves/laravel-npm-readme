@@ -43,6 +43,16 @@ $html = NpmReadme::fetchHtml('https://www.npmjs.com/package/@tailwindcss/vite');
 
 `NpmReadme::packageFromUrl($url)` is also public if you only need the package identifier.
 
+## Configuration
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `cache_minutes` | `60` | Minutes the rendered HTML is cached per package. |
+| `registry_url` | `https://registry.npmjs.org` | npm registry base URL. |
+| `timeout` | `8` | Registry request timeout in seconds. |
+| `user_agent` | `laravel-npm-readme` | `User-Agent` header for the registry request. |
+| `renderer` | `null` | Optional `callable(string $markdown): string`. When null, an internal CommonMark renderer (GFM + heading permalinks, raw HTML stripped) is used. |
+
 ## Security
 
 The rendered HTML is **untrusted** (third-party package READMEs). The default renderer therefore **strips raw HTML** (`html_input` = `strip`), so an embedded `<script>` cannot become stored XSS.
@@ -54,21 +64,28 @@ If you need raw HTML kept, provide your own `renderer` callable in `config/npm-r
 'renderer' => [\App\Support\Markdown::class, 'render'],
 ```
 
-## Configuration
-
-| Key | Default | Description |
-| --- | --- | --- |
-| `cache_minutes` | `60` | Minutes the rendered HTML is cached per package. |
-| `registry_url` | `https://registry.npmjs.org` | npm registry base URL. |
-| `timeout` | `8` | Registry request timeout in seconds. |
-| `user_agent` | `laravel-npm-readme` | `User-Agent` header for the registry request. |
-| `renderer` | `null` | Optional `callable(string $markdown): string`. When null, an internal CommonMark renderer (GFM + heading permalinks, raw HTML stripped) is used. |
-
 ## Testing
 
 ```bash
 composer test
 ```
+
+## Changelog
+
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+
+## Contributing
+
+Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
+
+## Security Vulnerabilities
+
+Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+
+## Credits
+
+- [Jefferson Gonçalves](https://github.com/jeffersongoncalves)
+- [All Contributors](../../contributors)
 
 ## License
 
